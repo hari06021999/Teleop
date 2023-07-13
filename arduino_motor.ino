@@ -100,16 +100,20 @@ void onTwist(const geometry_msgs::Twist &msg)
   digitalWrite(13,HIGH);
    digitalWrite(13,LOW);
   // Set direction pins and PWM
+  analogWrite(L_PWM, lPwm);
   digitalWrite(L_FORW, l > 0);
   digitalWrite(L_BACK, l < 0);
+  analogWrite(R_PWM, rPwm);
   digitalWrite(R_FORW, r > 0);
   digitalWrite(R_BACK, r < 0);
-  analogWrite(L_PWM, lPwm);
-  analogWrite(R_PWM, rPwm);
-  portOne.print("lpwm:");
-  portOne.println(lPwm);
-  portOne.print("rpwm:");
-  portOne.println(rPwm);
+  
+  
+  digitalWrite(L_FORW, 0);
+  digitalWrite(L_BACK, 0);
+  digitalWrite(R_FORW, 0);
+  digitalWrite(R_BACK, 0);
+  analogWrite(L_PWM, 0);
+  analogWrite(R_PWM, 0);
 }
 
 void loop()
