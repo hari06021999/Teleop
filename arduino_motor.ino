@@ -1,77 +1,59 @@
-
-
 #include <math.h>
 #include <ros.h>
 #include <geometry_msgs/Twist.h>
-#include <SoftwareSerial.h>
-SoftwareSerial portOne(11, 12);
-// The min amount of PWM the motors need to move. Depends on the battery, motors and controller.
-// The max amount is defined by PWMRANGE in Arduino.h
-#define PWM_MIN -255
-#define PWMRANGE 255
-
-// Declare functions
-void setupPins();
-void setupSerial();
-void setupWiFi();
-bool rosConnected();
+#include <std_msgs/Bool.h>
+#define THROTTLE_PIN   2
+#define REVERSE_PIN  4
+#define THROTTLE_MIN_PWM  0
+#define THROTTLE_MAX_PWM  200
+#define FRONT_LIGHT_WHITE 6
+#define BACK_LIGHT_RED 7
 void onTwist(const geometry_msgs::Twist &msg);
-float mapPwm(float x, float out_min, float out_max);
-
-// Pins
-const uint8_t R_PWM = 5;
-const uint8_t R_BACK = 6;
-const uint8_t R_FORW = 7;
-const uint8_t L_BACK = 8;
-const uint8_t L_FORW = 9;
-const uint8_t L_PWM = 10;
-
-
-// ROS serial server
+void onLight(const std_msgs::Bool &msg);
+void Forward_rightMotor(int Throttle_Pin , int Throttle_Min_Readings, int Throttle_Max_Readings, int Throttle_Min_PWM ,int Throttle_Max_PWM );
+void Forward_leftMotor(int Throttle_Pin , int Throttle_Min_Readings, int Throttle_Max_Readings, int Throttle_Min_PWM ,int Throttle_Max_PWM );
 
 ros::NodeHandle node;
-ros::Subscriber<geometry_msgs::Twist> sub("/cmd_vel", &onTwist);
+
+ros::Subscriber<geometry_msgs::Twist> sub("/linear/angular", &onTwist);
+ros::Subscriber<std_msgs::Bool> sub_led("/light", &onLight);
 
 bool _connected = false;
 
-void setup()
-{
-  setupPins();
-  portOne.begin(9600);
-  portOne.println("hello Wlcome");
-  pinMode(13, OUTPUT);
-  digitalWrite(13,LOW);
-  node.initNode();
-  node.subscribe(sub);
-  
+void setup() {
+ 
+    pinMode(THROTTLE_PIN, OUTPUT);
+    pinMode(REVERSE_PIN,OUTPUT);
+    pinMode(FRONT_LIGHT_WHITE,OUTPUT);
+    digitalWrite(FRONT_LIGHT_WHITE,LOW);
+    digitalWrite(REVERSE_PIN,LOW);
+    node.initNode();
+    node.subscribe(sub_led);
+    node.subscribe(sub);
 }
-
-void setupPins()
-{
-  
-
-  pinMode(L_PWM, OUTPUT);
-  pinMode(L_FORW, OUTPUT);
-  pinMode(L_BACK, OUTPUT);
-  pinMode(R_PWM, OUTPUT);
-  pinMode(R_FORW, OUTPUT);
-  pinMode(R_BACK, OUTPUT);
-  stop();
-  
-}
-
-
 
 void stop()
 {
-  digitalWrite(L_FORW, 0);
-  digitalWrite(L_BACK, 0);
-  digitalWrite(R_FORW, 0);
-  digitalWrite(R_BACK, 0);
-  analogWrite(L_PWM, 0);
-  analogWrite(R_PWM, 0);
+  analogWrite(THROTTLE_PIN,0);
 }
+void loop() {
+if (!rosConnected())
+    stop();
+  node.spinOnce();
 
+}
+void onLight(const std_msgs::Bool &msg)
+{
+   int state = msg.data;
+   if(state==1)
+   {
+     digitalWrite(FRONT_LIGHT_WHITE,LOW);
+   }
+   if(state==0)
+   {
+     digitalWrite(FRONT_LIGHT_WHITE,HIGH);
+   }
+}
 void onTwist(const geometry_msgs::Twist &msg)
 {
   if (!_connected)
@@ -79,50 +61,37 @@ void onTwist(const geometry_msgs::Twist &msg)
     stop();
     return;
   }
-   digitalWrite(13,HIGH);
-   digitalWrite(13,LOW);
-  portOne.print("Linear:");
-  portOne.println(msg.linear.x);
-  portOne.print("Angular:");
-  portOne.println(msg.angular.z);
+  
   // Cap values at [-1 .. 1]
   float x = max(min(msg.linear.x, 1.0f), -1.0f);
   float z = max(min(msg.angular.z, 1.0f), -1.0f);
 
   // Calculate the intensity of left and right wheels. Simple version.
-  // Taken from https://hackernoon.com/unicycle-to-differential-drive-courseras-control-of-mobile-robots-with-ros-and-rosbots-part-2-6d27d15f2010#1e59
-  float l = (msg.linear.x - msg.angular.z) / 2;
-  float r = (msg.linear.x + msg.angular.z) / 2;
+    float l = (msg.linear.x - msg.angular.z) / 2;
+    float r = (msg.linear.x + msg.angular.z) / 2;
 
-  // Then map those values to PWM intensities. PWMRANGE = full speed, while PWM_MIN = the minimal amount of power at which the motors begin moving.
-  uint16_t lPwm = mapPwm(fabs(l), PWM_MIN, PWMRANGE);
-  uint16_t rPwm = mapPwm(fabs(r), PWM_MIN, PWMRANGE);
-  digitalWrite(13,HIGH);
-   digitalWrite(13,LOW);
-  // Set direction pins and PWM
-  analogWrite(L_PWM, lPwm);
-  digitalWrite(L_FORW, l > 0);
-  digitalWrite(L_BACK, l < 0);
-  analogWrite(R_PWM, rPwm);
-  digitalWrite(R_FORW, r > 0);
-  digitalWrite(R_BACK, r < 0);
-  
-  
-  digitalWrite(L_FORW, 0);
-  digitalWrite(L_BACK, 0);
-  digitalWrite(R_FORW, 0);
-  digitalWrite(R_BACK, 0);
-  analogWrite(L_PWM, 0);
-  analogWrite(R_PWM, 0);
+    uint16_t lPwm = mapPwm(fabs(l), THROTTLE_MIN_PWM, THROTTLE_MAX_PWM);
+    uint16_t rPwm = mapPwm(fabs(r), THROTTLE_MIN_PWM, THROTTLE_MAX_PWM);
+
+    Forward_rightMotor(THROTTLE_PIN,0,lPwm,THROTTLE_MIN_PWM,THROTTLE_MAX_PWM);
+    Forward_leftMotor(THROTTLE_PIN,0,rPwm,THROTTLE_MIN_PWM,THROTTLE_MAX_PWM);
+
 }
 
-void loop()
+void Forward_rightMotor( int Throttle_Pin  , int Throttle_Min_Readings, int Throttle_Max_Readings, int Throttle_Min_PWM ,int Throttle_Max_PWM )
 {
-  if (!rosConnected())
-    stop();
-  node.spinOnce();
-}
+    int Throttle_PWM_Value = map(100,Throttle_Min_Readings,Throttle_Max_Readings,Throttle_Min_PWM,Throttle_Max_PWM);
+    digitalWrite(REVERSE_PIN,LOW);
+    analogWrite(Throttle_Pin, Throttle_PWM_Value);
 
+}
+void Forward_leftMotor( int Throttle_Pin  , int Throttle_Min_Readings, int Throttle_Max_Readings, int Throttle_Min_PWM ,int Throttle_Max_PWM )
+{
+    int Throttle_PWM_Value = map(100,Throttle_Min_Readings,Throttle_Max_Readings,Throttle_Min_PWM,Throttle_Max_PWM);
+    digitalWrite(REVERSE_PIN,LOW);
+    analogWrite(Throttle_Pin, Throttle_PWM_Value);
+
+}
 bool rosConnected()
 {
   // If value changes, notify via LED and console.
@@ -130,8 +99,6 @@ bool rosConnected()
   if (_connected != connected)
   {
     _connected = connected;
-  
-    portOne.println(connected ? "ROS connected" : "ROS disconnected");
   }
   return connected;
 }
