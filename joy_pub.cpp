@@ -59,12 +59,10 @@ class RemoteTeleop {
        return x * (out_max - out_min) + out_min;
     }
     void callback_joy(const geometry_msgs::Twist& msg) {
-       
-       
-        if((msg.linear.x >0 || msg.linear.x<0)&& flag==0)
-	{
+
+        pub.publish(msg);
+		
  	printf("Linear:%lf , Angular:%lf\n",msg.linear.x,msg.angular.z);
- 	printf("Linear value \n");
          l = (msg.linear.x - msg.angular.z) / 2;
          r = (msg.linear.x + msg.angular.z) / 2;
 	 lPwm = mapPwm(fabs(l), 80,120);
@@ -72,32 +70,13 @@ class RemoteTeleop {
 	printf("left PWM: %d \n",lPwm);
 	printf("right PWM: %d \n",rPwm);
 	if(l<0)
-	{
-	printf("left reverse\n");
-	}
+		printf("left reverse\n");
 	else
-	{
-	printf("left forward\n");
-	}
+		printf("left forward\n");
 	if(r<0)
-	{
-	printf("right reverse\n");
-	}
+		printf("right reverse\n");
 	else
-	{
-	printf("right forward\n");
-	}
-	flag=1;
-        pub.publish(msg);
-	
-	}
-	if(msg.linear.x==0)
-       {  
- 	printf("Linear:%lf , Angular:%lf\n",msg.linear.x,msg.angular.z);
-	printf("Linear value zero\n");
-         flag=0;
-         pub.publish(msg);
-	}
+		printf("right forward\n");	
     }
     
     
@@ -165,10 +144,7 @@ class RemoteTeleop {
       ROS_INFO("Lights off:%d",light_2);
       count_2=0;
      }
- 
-   }
-   
-    
+   }  
 };
 
 int main (int argc, char **argv)
