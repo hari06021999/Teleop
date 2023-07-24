@@ -1,5 +1,4 @@
 
-
 #include <math.h>
 #include <ros.h>
 #include <geometry_msgs/Twist.h>
@@ -35,6 +34,9 @@ const uint8_t front_light = 5;
 const uint8_t front_light_white = 6;
 const uint8_t front_light_yellow = 7;
 const uint8_t brake_light = 1;
+const uint8_t forward_brake = 10;
+const uint8_t reverse_brake = 11;
+
 
 
 // ROS serial server
@@ -75,6 +77,8 @@ void setupPins()
    pinMode(front_light, OUTPUT);
   pinMode(front_light_white, OUTPUT);
   pinMode(front_light_yellow, OUTPUT);
+  pinMode(forward_brake, OUTPUT);
+  pinMode(reverse_brake, OUTPUT);
   stop();
   
 }
@@ -89,6 +93,8 @@ void stop()
   digitalWrite(front_light, HIGH);
   digitalWrite(front_light_white, HIGH); 
   digitalWrite(front_light_yellow, HIGH);
+  digitalWrite(forward_brake, HIGH); 
+  digitalWrite(reverse_brake, HIGH);
     pwmWrite(L_PWM, 0);
   pwmWrite(R_PWM, 0);
   
@@ -105,14 +111,9 @@ void onTwist(const geometry_msgs::Twist &msg)
 if(msg.linear.x>0||msg.linear.x<0)
 {
   // Cap values at [-1 .. 1]
-  float x = max(min(msg.linear.x, 1.0f), -1.0f);
-  float z = max(min(msg.angular.z, 1.0f), -1.0f);
-  if(x==0 && z==0)
-  {
-    brake();
-  }
+  
   // Calculate the intensity of left and right wheels. Simple version.
-  // Taken from https://hackernoon.com/unicycle-to-differential-drive-courseras-control-of-mobile-robots-with-ros-and-rosbots-part-2-6d27d15f2010#1e59
+  
   float l = (msg.linear.x - msg.angular.z) / 2;
   float r = (msg.linear.x + msg.angular.z) / 2;
 
@@ -121,15 +122,16 @@ if(msg.linear.x>0||msg.linear.x<0)
   uint16_t rPwm = mapPwm(fabs(r), PWM_MIN, PWMRANGE);
 
   // Set direction pins and PWM
-       digitalWrite(left_relay, l>0);
-       digitalWrite(right_relay, r>0);
+       digitalWrite(left_relay, l<0);
+       digitalWrite(right_relay, r<0);
 
   digitalWrite(LED_BUILTIN, HIGH);
   for(int i=25,j=25;i<lPwm,j<rPwm;i++,j++)
   {
-   
-   pwmWrite(L_PWM, i);
-   pwmWrite(R_PWM, j);
+   if(i<=lPwm)
+		pwmWrite(L_PWM, i);
+   if(j<=rPwm)
+		pwmWrite(R_PWM, j);
    delay(100);
   }
 }
@@ -138,6 +140,7 @@ else
   digitalWrite(LED_BUILTIN, LOW);
   pwmWrite(L_PWM, 0);
   pwmWrite(R_PWM, 0);
+  brake();
 }
 }
 void onfront(const std_msgs::Bool &msg)
@@ -181,8 +184,15 @@ void brake(void)
 {
  
         digitalWrite(brake_light, LOW);
-//        delay(1000);
+		digitalWrite(forward_brake, LOW); 
+        digitalWrite(reverse_brake, HIGH);
+        delay(1000);
         digitalWrite(brake_light, HIGH);
+		digitalWrite(forward_brake, HIGH); 
+        digitalWrite(reverse_brake, LOW);
+		delay(1000);
+		digitalWrite(forward_brake, HIGH); 
+        digitalWrite(reverse_brake, HIGH);
   
 }
 void loop()
@@ -190,15 +200,7 @@ void loop()
   if (!rosConnected())
     stop();
   node.spinOnce();
-//  while(1)
-//  {
-//    digitalWrite(LED_BUILTIN, HIGH);
-//    delay(500);
-//    digitalWrite(LED_BUILTIN, LOW);
-//    delay(500);
-//     if (!rosConnected())
-//        node.spinOnce();
-//  }
+
 }
 
 bool rosConnected()
