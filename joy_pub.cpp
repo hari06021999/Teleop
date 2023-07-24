@@ -7,17 +7,14 @@
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Joy.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <sstream>
 #include <iostream>
 #include <stdlib.h>
-#include <termios.h>
-#include <ctime>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int16.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
 
 
  
@@ -37,6 +34,10 @@ class RemoteTeleop {
       int count_2=0;
       int count_3=0;
       int flag=0;
+      float l=0;
+      float r=0;
+      uint16_t lPwm = 0;
+      uint16_t rPwm = 0;
     public:
   
         
@@ -49,10 +50,14 @@ class RemoteTeleop {
         joystick_subscriber = nh->subscribe("/cmd_vel", 2, &RemoteTeleop::callback_joy, this);
         button1_subscriber = nh->subscribe("btn1topic", 2, &RemoteTeleop::callback_button1, this);
 	button2_subscriber = nh->subscribe("btn2topic", 2, &RemoteTeleop::callback_button2, this);
+	float mapPwm(float x, float out_min, float out_max);
        
            
     }
- 
+    float mapPwm(float x, float out_min, float out_max)
+    {
+       return x * (out_max - out_min) + out_min;
+    }
     void callback_joy(const geometry_msgs::Twist& msg) {
        
        
@@ -60,6 +65,28 @@ class RemoteTeleop {
 	{
  	printf("Linear:%lf , Angular:%lf\n",msg.linear.x,msg.angular.z);
  	printf("Linear value \n");
+         l = (msg.linear.x - msg.angular.z) / 2;
+         r = (msg.linear.x + msg.angular.z) / 2;
+	 lPwm = mapPwm(fabs(l), 80,120);
+         rPwm = mapPwm(fabs(r), 80,120);
+	printf("left PWM: %d \n",lPwm);
+	printf("right PWM: %d \n",rPwm);
+	if(l<0)
+	{
+	printf("left reverse\n");
+	}
+	else
+	{
+	printf("left forward\n");
+	}
+	if(r<0)
+	{
+	printf("right reverse\n");
+	}
+	else
+	{
+	printf("right forward\n");
+	}
 	flag=1;
         pub.publish(msg);
 	
