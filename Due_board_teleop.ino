@@ -5,37 +5,9 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int16.h>
 #include <DuePWM.h>
+#include <stdint.h>
+#include "teleop_config.h"
 
-
-// The min amount of PWM the motors need to move. Depends on the battery, motors and controller.
-// The max amount is defined by PWMRANGE in Arduino.h
-#define PWM_MIN 80
-#define PWMRANGE 120
-int frequency_right = 350; //frequency (in Hz)
-int frequency_left = 400; //frequency (in Hz)
-
-// Declare functions
-void setupPins();
-void setupSerial();
-void setupWiFi();
-bool rosConnected();
-void onTwist(const geometry_msgs::Twist &msg);
-void onfront(const std_msgs::Bool &msg);
-void onfont_multi(const std_msgs::Int16 &msg);
-float mapPwm(float x, float out_min, float out_max);
-void brake(void);
-
-// Pins
-const uint8_t R_PWM = 9;//D3
-const uint8_t right_relay = 2;// D2 RIGHT 1ST MOTOR
-const uint8_t left_relay = 4;// D4 RIGHT 2ND MOTOR
-const uint8_t L_PWM = 8;//D9
-const uint8_t front_light = 5;
-const uint8_t front_light_white = 6;
-const uint8_t front_light_yellow = 7;
-const uint8_t brake_light = 1;
-const uint8_t forward_brake = 10;
-const uint8_t reverse_brake = 11;
 
 
 
@@ -46,7 +18,7 @@ ros::Subscriber<std_msgs::Bool> sub_light1("front/light",&onfront);
 ros::Subscriber<std_msgs::Int16> sub_light2("front/light/multi",&onfont_multi);
 ros::Subscriber<geometry_msgs::Twist> sub("/linear/angular", &onTwist);
 
-bool _connected = false;
+
 
 void setup()
 {
@@ -125,7 +97,7 @@ if(msg.linear.x>0||msg.linear.x<0)
        digitalWrite(right_relay, r<0);
 
   digitalWrite(LED_BUILTIN, HIGH);
-  for(int i=25,j=25;i<lPwm,j<rPwm;i++,j++)
+  for(uint16_t i=25,j=25;i<lPwm,j<rPwm;i++,j++)
   {
    if(i<=lPwm)
 		pwm.pinDuty(L_PWM, i);
@@ -144,15 +116,15 @@ else
 }
 void onfront(const std_msgs::Bool &msg)
 {
-  int check = msg.data;
-  if(check == 1)
+  uint8_t frontlight_data = msg.data;
+  if(frontlight_data == ONE)
   {
    
 
     digitalWrite(front_light, LOW);
    
   }
-   if(check == 0)
+   if(frontlight_data == ZERO)
   {
     digitalWrite(front_light, HIGH);
   
@@ -160,20 +132,20 @@ void onfront(const std_msgs::Bool &msg)
 }
 void onfont_multi(const std_msgs::Int16 &msg)
 {
-  int check = msg.data;
-  if(check == 1)
+  uint8_t  front_mutli_light_data = msg.data;
+  if(front_mutli_light_data == ONE)
   {
    
     digitalWrite(front_light_white, LOW);
     digitalWrite(front_light_yellow, HIGH);
 
   }
-   if(check == 2)
+   if(front_mutli_light_data == TWO)
   {
     digitalWrite(front_light_yellow, LOW);
     digitalWrite(front_light_white, HIGH);
   }
-  if(check == 0)
+  if(front_mutli_light_data == ZERO)
   {
     digitalWrite(front_light_white, HIGH);
     digitalWrite(front_light_yellow, HIGH);
@@ -209,8 +181,6 @@ bool rosConnected()
   if (_connected != connected)
   {
     _connected = connected;
-  
-   // portOne.println(connected ? "ROS connected" : "ROS disconnected");
   }
   return connected;
 }
