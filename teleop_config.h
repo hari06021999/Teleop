@@ -28,7 +28,7 @@ const uint8_t front_light_yellow = 7;
 const uint8_t brake_light = 1;
 const uint8_t forward_brake = 10;
 const uint8_t reverse_brake = 11;
-
+const uint8_t reverse_light = 12;
 bool _connected = false;
 
 typedef enum {ZERO,ONE,TWO,THREE,FOUR,FIVE}number;
