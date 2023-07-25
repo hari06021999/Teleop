@@ -31,4 +31,4 @@ const uint8_t reverse_brake = 11;
 
 bool _connected = false;
 
-enum {ZERO,ONE,TWO,THREE,FOUR,FIVE};
+typedef enum {ZERO,ONE,TWO,THREE,FOUR,FIVE}number;
