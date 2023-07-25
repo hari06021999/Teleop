@@ -45,11 +45,12 @@ void setupPins()
   pinMode(brake_light,OUTPUT);
   pinMode(right_relay, OUTPUT);
   pinMode(left_relay, OUTPUT);
-   pinMode(front_light, OUTPUT);
+  pinMode(front_light, OUTPUT);
   pinMode(front_light_white, OUTPUT);
   pinMode(front_light_yellow, OUTPUT);
   pinMode(forward_brake, OUTPUT);
   pinMode(reverse_brake, OUTPUT);
+  pinMode(reverse_light, OUTPUT);
   stop();
   
 }
@@ -66,6 +67,7 @@ void stop()
   digitalWrite(front_light_yellow, HIGH);
   digitalWrite(forward_brake, HIGH); 
   digitalWrite(reverse_brake, HIGH);
+  digitalWrite(reverse_light, HIGH);
   pwm.pinDuty(L_PWM, 0);
   pwm.pinDuty(R_PWM, 0);
   
@@ -84,7 +86,7 @@ if(msg.linear.x>0||msg.linear.x<0)
   // Cap values at [-1 .. 1]
   
   // Calculate the intensity of left and right wheels. Simple version.
-  
+  uint8_t right_flag=0,left_flag=0;
   float l = (msg.linear.x - msg.angular.z) / 2;
   float r = (msg.linear.x + msg.angular.z) / 2;
 
@@ -95,7 +97,11 @@ if(msg.linear.x>0||msg.linear.x<0)
   // Set direction pins and PWM
        digitalWrite(left_relay, l<0);
        digitalWrite(right_relay, r<0);
-
+  if(l<0 && r<0)
+  {
+    right_flag=1;
+    left_flag=1;
+  }
   digitalWrite(LED_BUILTIN, HIGH);
   for(uint16_t i=25,j=25;i<lPwm,j<rPwm;i++,j++)
   {
@@ -103,6 +109,10 @@ if(msg.linear.x>0||msg.linear.x<0)
 		pwm.pinDuty(L_PWM, i);
    if(j<=rPwm)
 		pwm.pinDuty(R_PWM, j);
+   if(right_flag==1 && left_flag==1)
+   {
+     digitalWrite(reverse_light, LOW);
+   }
    delay(100);
   }
 }
@@ -153,7 +163,7 @@ void onfont_multi(const std_msgs::Int16 &msg)
 }
 void brake(void)
 {
- 
+      digitalWrite(reverse_light, HIGH);
       digitalWrite(brake_light, LOW);
       digitalWrite(forward_brake, LOW); 
       digitalWrite(reverse_brake, HIGH);
