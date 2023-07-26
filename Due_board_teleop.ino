@@ -42,7 +42,7 @@ void setup()
 void setupPins()
 {
    
-  pinMode(brake_light,OUTPUT);
+ 
   pinMode(right_relay, OUTPUT);
   pinMode(left_relay, OUTPUT);
   pinMode(front_light, OUTPUT);
@@ -59,7 +59,6 @@ void setupPins()
 
 void stop()
 {
-    digitalWrite(brake_light, HIGH);
   digitalWrite(right_relay, HIGH);
   digitalWrite(left_relay, HIGH);
   digitalWrite(front_light, HIGH);
@@ -164,11 +163,9 @@ void onfont_multi(const std_msgs::Int16 &msg)
 void brake(void)
 {
       digitalWrite(reverse_light, HIGH);
-      digitalWrite(brake_light, LOW);
       digitalWrite(forward_brake, LOW); 
       digitalWrite(reverse_brake, HIGH);
       delay(1000);
-      digitalWrite(brake_light, HIGH);
       digitalWrite(forward_brake, HIGH); 
       digitalWrite(reverse_brake, LOW);
       delay(1000);
