@@ -1,6 +1,6 @@
 1. touch start.sh
 2. sudo pico start.sh
-
+[ERROR] [1690374387.941498]: Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino
 //insert content
 #!/bin/bash
 /usr/bin/python file path location
@@ -51,4 +51,4 @@ WantedBy=multi-user.target
 13. * * * * * sudo service name_script start
 
 
-[ERROR] [1690374387.941498]: Unable to sync with device; possible link problem or link software version mismatch such as hydro rosserial_python with groovy Arduino
+
