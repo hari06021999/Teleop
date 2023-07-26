@@ -18,17 +18,16 @@ void brake(void);
 
 
 // Pins
-const uint8_t R_PWM = 9;//D3
-const uint8_t right_relay = 2;// D2 RIGHT 1ST MOTOR
-const uint8_t left_relay = 4;// D4 RIGHT 2ND MOTOR
-const uint8_t L_PWM = 8;//D8
-const uint8_t front_light = 5;
-const uint8_t front_light_white = 6;
-const uint8_t front_light_yellow = 7;
-const uint8_t brake_light = 1;
-const uint8_t forward_brake = 10;
-const uint8_t reverse_brake = 11;
-const uint8_t reverse_light = 12;
+const uint8_t R_PWM = 6;
+const uint8_t right_relay = 3;
+const uint8_t left_relay = 4;
+const uint8_t L_PWM = 7;
+const uint8_t front_light = 14;
+const uint8_t front_light_white = 15;
+const uint8_t front_light_yellow = 16;
+const uint8_t forward_brake = 8;
+const uint8_t reverse_brake = 9;
+const uint8_t reverse_light = 10;
 bool _connected = false;
 
 typedef enum {ZERO,ONE,TWO,THREE,FOUR,FIVE}number;
